@@ -14,26 +14,31 @@ type AsyncValue<T, E = string> =
     message: E;
 };
 
-interface Pokemon {
+interface PokemonDetail {
     name: string;
     sprites: {
         back_default: string;
     }
 }
 
+interface PokemonRef {
+    name: string;
+    url: string;
+}
+
 interface PokemonListResp {
     count: number;
     next: string | null;
     previous: string | null;
-    results: Pokemon[];
+    results: PokemonRef[];
 }
 
 async function getPokemonList(): Promise<PokemonListResp> {
     return await fetch("https://pokeapi.co/api/v2/pokemon").then((resp) => resp.json())
 }
 
-async function getPokemon(): Promise<Pokemon> {
-    return await fetch("https://pokeapi.co/api/v2/pokemon/1").then((resp) => resp.json())
+async function getPokemon(url: string): Promise<PokemonDetail> {
+    return await fetch(url).then((resp) => resp.json())
 }
 
 /*
@@ -41,17 +46,29 @@ async function getPokemon(): Promise<Pokemon> {
  * const resp_json = await resp.json()
  */
 function App() {
-    const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
-    const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+    const [pokemonRefs, setPokemonRefs] = useState<PokemonRef[]>([]);
+    const [pokemonDetails, setPokemonDetails] = useState<PokemonDetail[] | null>(null);
+
+    useEffect(() => {
+        (async () => {
+            if (pokemonRefs.length > 0) {
+                // Array<Promise<PokemonDetail>>
+                const detailPromises = pokemonRefs.map((elem) => {
+                    return getPokemon(elem.url)
+                })
+                // Promise<array<details>>
+                const detailsPromise = Promise.all(detailPromises)
+                // array<details>; await gets rid of (collapses) promises
+                const details = await detailsPromise
+                setPokemonDetails(details)
+            }
+        })();
+    }, [pokemonRefs]);
 
     useEffect(() => {
         (async () => {
             const resp = await getPokemonList();
-            setPokemonList(resp.results);
-        })();
-        (async () => {
-            const resp = await getPokemon();
-            setSelectedPokemon(resp);
+            setPokemonRefs(resp.results);
         })();
     }, []);
 
@@ -60,10 +77,17 @@ function App() {
             {/*{pokemonList.map((pokemon) =>*/}
             {/*  <span>{ pokemon.name } </span>*/}
             {/*) }*/}
-            {pokemonList.map((pokemon) => pokemon.name).join(", ")}
-            {selectedPokemon && (
-                <img src={selectedPokemon.sprites.back_default} />
-            )}
+            {pokemonDetails && pokemonDetails.map((pokemonDetail) => (
+                <div>
+                    {pokemonDetail.name}
+                    <img src={pokemonDetail.sprites.back_default} />
+                </div>
+
+            ))}
+
+            {/*{pokemonDetails && (*/}
+            {/*    <img src={pokemonDetails.sprites.back_default} />*/}
+            {/*)}*/}
         </div>
     );
 }
