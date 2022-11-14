@@ -34,7 +34,12 @@ interface PokemonListResp {
 }
 
 async function getPokemonList(): Promise<PokemonListResp> {
-    return await fetch("https://pokeapi.co/api/v2/pokemon").then((resp) => resp.json())
+    const resp = await fetch("https://pokeapi.co/api/v2/pokemon")
+    if (!resp.ok) {
+        const message = await resp.text().catch(() => "Unknown error")
+        throw Error(`Failed to fetch: ${message}`)
+    }
+    return await resp.json()
 }
 
 async function getPokemon(url: string): Promise<PokemonDetail> {
@@ -46,14 +51,14 @@ async function getPokemon(url: string): Promise<PokemonDetail> {
  * const resp_json = await resp.json()
  */
 function App() {
-    const [pokemonRefs, setPokemonRefs] = useState<PokemonRef[]>([]);
+    const [pokemonRefs, setPokemonRefs] = useState<AsyncValue<PokemonRef[]>>({ status: "pending" });
     const [pokemonDetails, setPokemonDetails] = useState<PokemonDetail[] | null>(null);
 
     useEffect(() => {
         (async () => {
-            if (pokemonRefs.length > 0) {
+            if (pokemonRefs.status === "ready") {
                 // Array<Promise<PokemonDetail>>
-                const detailPromises = pokemonRefs.map((elem) => {
+                const detailPromises = pokemonRefs.value.map((elem) => {
                     return getPokemon(elem.url)
                 })
                 // Promise<array<details>>
@@ -67,8 +72,12 @@ function App() {
 
     useEffect(() => {
         (async () => {
-            const resp = await getPokemonList();
-            setPokemonRefs(resp.results);
+            try {
+                const resp = await getPokemonList();
+                setPokemonRefs({ status: "ready", value: resp.results });
+            } catch (e) {
+                setPokemonRefs( {status: "error", message: e instanceof Error ? e.message : String(e)})
+            }
         })();
     }, []);
 
@@ -77,6 +86,7 @@ function App() {
             {/*{pokemonList.map((pokemon) =>*/}
             {/*  <span>{ pokemon.name } </span>*/}
             {/*) }*/}
+            {pokemonRefs.status === "error" && pokemonRefs.message}
             {pokemonDetails && pokemonDetails.map((pokemonDetail) => (
                 <div>
                     {pokemonDetail.name}
