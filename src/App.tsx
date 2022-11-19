@@ -22,13 +22,14 @@ interface PokemonDetail {
             type: {
                 name: string
             }
+        }
         1: {
             type: {
                 name: string
             }
         }
-    }
-};
+    };
+
     sprites: {
         other: {
             "official-artwork": {
@@ -66,7 +67,7 @@ function App() {
     }
 
     const [pokemonRefs, setPokemonRefs] = useState<AsyncValue<PokemonRef[]>>({ status: "pending" });
-    const [pokemonDetails, setPokemonDetails] = useState<PokemonDetail[] | null>(null);
+    const [pokemonDetails, setPokemonDetails] = useState<PokemonDetail[]>([]);
     const [offset, setOffset] = useState(0);
     const limit = 20;
 
@@ -81,10 +82,10 @@ function App() {
                 const detailsPromise = Promise.all(detailPromises)
                 // array<details>; await gets rid of (collapses) promises
                 const details = await detailsPromise
-                setPokemonDetails([...details]) //how to append new details?
+                setPokemonDetails([...pokemonDetails, ...details]) //how to append new details?
             }
         })();
-    }, [[pokemonRefs]]);
+    }, [pokemonRefs]);
 
     useEffect(() => {
         (async () => {
@@ -100,17 +101,21 @@ function App() {
 
     return (
         <div className="App">
+            <h1 className='header'>Pokedex App</h1>
+            <div className='pokedex-container'>
             {pokemonRefs.status === "error" && pokemonRefs.message}
             {pokemonDetails && pokemonDetails.map((pokemonDetail) => (
-                <div>
-                    <h1>{pokemonDetail.name}</h1>
-                    <p>{pokemonDetail.types[0].type.name}</p>
+                <div className='container'>
+                    <h1 className='name'>{pokemonDetail.name}</h1> 
+                    <p className='type'>{Object.values(pokemonDetail.types).map(x => <span className='type'>{x.type.name} </span>)}</p>
                     <img width="200px" src={pokemonDetail.sprites.other["official-artwork"].front_default} />
                 </div>
             ))}
             <button
+                className='more'
                 onClick={() => {setOffset(offset + limit)}}
-            >Click Here for more Pokemon!</button>
+            >Click here for more Pokemon!</button>
+            </div>
         </div>
     );
 }
