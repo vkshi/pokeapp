@@ -1,58 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { InvalidatedProjectKind } from "typescript";
 import "./App.css";
 import Loader from "./components/Loader/loader";
 import SearchBar from "./components/SearchBar/SearchBar";
+import { AsyncValue } from "./Models/common";
+import { PokemonDetail, PokemonListResp, PokemonRef } from "./Models/pokemon";
 
-type AsyncValue<T, E = string> =
-  | {
-      status: "pending",
-    }
-  | {
-      status: "ready",
-      value: T,
-    }
-  | {
-      status: "error",
-      message: E,
-    };
-
-interface PokemonDetail {
-  name: string;
-  //what do when more than one type
-  types: {
-    0: {
-      type: {
-        name: string,
-      },
-    },
-    1: {
-      type: {
-        name: string,
-      },
-    },
+export function onKeyDownCallBack(
+  onEnter: (text: string) => void,
+  onEscape: () => void,
+  ): (event: React.KeyboardEvent<HTMLDivElement>) => void {
+  return (event): void => {
+  if (event.key === "Enter" && event.target instanceof HTMLInputElement) {
+  onEnter(event.target.value);
+  } else if (event.key === "Escape" && event.target instanceof HTMLInputElement) {
+  onEscape();
+  // eslint-disable-next-line no-param-reassign
+  event.target.value = "";
+  }
+  event.stopPropagation();
   };
-
-  sprites: {
-    other: {
-      "official-artwork": {
-        front_default: string,
-      },
-    },
-  };
-}
-
-interface PokemonRef {
-  name: string;
-  url: string;
-}
-
-interface PokemonListResp {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: PokemonRef[];
-}
+  }
 
 function App() {
   async function getPokemonList(): Promise<PokemonListResp> {
@@ -75,6 +43,8 @@ function App() {
   const [offset, setOffset] = useState(0);
   const limit = 20;
   const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+  const filteredPokemonDetails = useMemo(() => pokemonDetails.filter(pokemonDetail => pokemonDetail.name.includes(query)), [query, pokemonDetails]);
 
   useEffect(() => {
     (async () => {
@@ -98,6 +68,7 @@ function App() {
     (async () => {
       try {
         const resp = await getPokemonList();
+        // pass query to getPokemonList() to update SearchBar
         setTimeout(function () {
           setLoading(true);
           setPokemonRefs({ status: "ready", value: [...resp.results] });
@@ -117,12 +88,12 @@ function App() {
       <div>{loading == true ? <Loader /> : ""}</div>
       <h1 className="header">Pokedex App</h1>
       <SearchBar
-        setPokemon={() => setPokemonRefs(pokemonRefs)} />
+        onQueryChange={e => setQuery(e.target.value)} />
         <div className="data-result">
           <div className="pokedex-container">
             {pokemonRefs.status === "error" && pokemonRefs.message}
-            {pokemonDetails &&
-              pokemonDetails.map((pokemonDetail) => (
+            {filteredPokemonDetails &&
+              filteredPokemonDetails.map((pokemonDetail) => (
                 <div className="container">
                   <h1 className="name">{pokemonDetail.name}</h1>
                   <p className="type">
@@ -137,7 +108,9 @@ function App() {
                   />
                 </div>
               ))}
-            <button
+          </div>
+        </div>
+        <button
               className="more"
               onClick={() => {
                 setOffset(offset + limit);
@@ -145,8 +118,6 @@ function App() {
             >
               Click here for more Pokemon!
             </button>
-          </div>
-        </div>
       </div>
   );
 }

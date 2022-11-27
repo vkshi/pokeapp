@@ -1,57 +1,29 @@
-import { prependOnceListener } from "process";
-import React, { useState, useEffect } from "react";
-import './SearchBar.css'
+import React from "react";
+import './SearchBar.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+
 
 interface SearchBarProps {
-    setPokemon: () => void;
+  onQueryChange: React.ChangeEventHandler<HTMLInputElement>;   
 }
 
 //props.setPokemon is not a function???
 
-const SearchBar: React.FC<SearchBarProps> = (setPokemon, props) => {
-    const [query, setQuery] = useState("");
+function SearchBar({onQueryChange}: SearchBarProps) {
+  //const {setPokemon} = props;
 
-    async function getPokemonQuery() {
-        const resp = await fetch(
-          `https://pokeapi.co/api/v2/pokemon/${query}`
-        );
-        if (!resp.ok) {
-          const message = await resp.text().catch(() => "Unknown error");
-          throw Error(`Failed to fetch: ${message}`);
-        }
-        return await resp.json();
-      }
-
-      useEffect(() => {
-        (async () => {
-          try {
-            const resp = await getPokemonQuery();
-            setTimeout(function () {
-              //setLoading(true);
-              props.setPokemon({ status: "ready", value: resp.results });
-            }, 1000);
-            //setLoading(false);
-          } catch (e) {
-            props.setPokemon({
-              status: "error",
-              message: e instanceof Error ? e.message : String(e),
-            });
-          }
-        })();
-      }, [query]);
-
-    return (
-        <div className="search">
-        <span className="search-inputs">
-          <input
-            type="text"
-            placeholder="Search Pokemon"
-            onSubmit={(e) => setQuery((e.target as HTMLInputElement).value)}
-          />
-          <span className="search-icon"></span>
-        </span>
-        </div>
-    );
+  return (
+    <div className="search">
+      <input
+        className="search-inputs"
+        type="text"
+        placeholder="Search Pokemon"
+        onChange={onQueryChange}
+      />
+      <button className="search-icon"><FontAwesomeIcon icon={faMagnifyingGlass} color="white" /></button>
+    </div>
+  );
 }
 
 export default SearchBar;

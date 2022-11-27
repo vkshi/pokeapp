@@ -1,0 +1,20 @@
+.search {
+    margin-bottom: 10px;
+    margin-top: 0;
+    border: 1px solid black;
+    border-radius: 3px;
+}
+
+.search-inputs {
+    width: 500px;
+    height: 50px;
+    border: 1px solid transparent;
+}
+
+.search-icon {
+    width: 50px;
+    height: 50px;
+    background-color: red;
+    border-radius: 2px;
+    border: 1px solid transparent;
+}
