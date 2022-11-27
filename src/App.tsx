@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { InvalidatedProjectKind } from "typescript";
 import "./App.css";
 import Loader from "./components/Loader/loader";
+import SearchBar from "./components/SearchBar/SearchBar";
 
 type AsyncValue<T, E = string> =
   | {
@@ -73,7 +75,6 @@ function App() {
   const [offset, setOffset] = useState(0);
   const limit = 20;
   const [loading, setLoading] = useState(false);
-  const [query, setQuery] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -115,17 +116,8 @@ function App() {
     <div className="App">
       <div>{loading == true ? <Loader /> : ""}</div>
       <h1 className="header">Pokedex App</h1>
-
-			{/* searchbar */}
-      <div className="search">
-        <span className="search-inputs">
-          <input
-            type="text"
-            placeholder="Search Pokemon"
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <span className="search-icon"></span>
-        </span>
+      <SearchBar
+        setPokemon={() => setPokemonRefs(pokemonRefs)} />
         <div className="data-result">
           <div className="pokedex-container">
             {pokemonRefs.status === "error" && pokemonRefs.message}
@@ -156,7 +148,6 @@ function App() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 

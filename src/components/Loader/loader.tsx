@@ -1,11 +1,7 @@
 import React from "react";
 import './loader.css'
 
-interface LoaderProps {
-
-}
-
-const Loader: React.FC<LoaderProps> = () => {
+const Loader: React.FC = () => {
     return (
         <div className="wrapper">
             <div className="pokeball"></div>
