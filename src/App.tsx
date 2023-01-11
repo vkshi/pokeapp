@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { InvalidatedProjectKind } from "typescript";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import Loader from "./components/Loader/loader";
 import SearchBar from "./components/SearchBar/SearchBar";
@@ -23,17 +22,6 @@ export function onKeyDownCallBack(
   }
 
 function App() {
-  async function getPokemonList(): Promise<PokemonListResp> {
-    const resp = await fetch(
-      `https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=${limit}`
-    );
-    if (!resp.ok) {
-      const message = await resp.text().catch(() => "Unknown error");
-      throw Error(`Failed to fetch: ${message}`);
-    }
-    return await resp.json();
-  }
-
   async function getPokemon(url: string): Promise<PokemonDetail> {
     return await fetch(url).then((resp) => resp.json());
   }
@@ -41,38 +29,54 @@ function App() {
   const [pokemonRefs, setPokemonRefs] = useState<AsyncValue<PokemonRef[]>>({ status: "pending" });
   const [pokemonDetails, setPokemonDetails] = useState<PokemonDetail[]>([]);
   const [offset, setOffset] = useState(0);
-  const limit = 20;
+  const limit = 898;
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const filteredPokemonDetails = useMemo(() => pokemonDetails.filter(pokemonDetail => pokemonDetail.name.includes(query)), [query, pokemonDetails]);
+
+  const getPokemonList = useCallback(
+    async (): Promise<PokemonListResp> => {
+      const resp = await fetch(
+        `https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=${limit}`
+      );
+      if (!resp.ok) {
+        const message = await resp.text().catch(() => "Unknown error");
+        throw Error(`Failed to fetch: ${message}`);
+      }
+      return await resp.json();
+    }, []
+  );
 
   useEffect(() => {
     (async () => {
       if (pokemonRefs.status === "ready") {
         // Array<Promise<PokemonDetail>>
-        const detailPromises = pokemonRefs.value.map((elem) => {
+        const detailPromises = pokemonRefs.value.filter(pokemonRef => {
+          return pokemonRef.name.includes(query);
+        })
+        .map((elem) => {
           return getPokemon(elem.url);
         });
         // Promise<array<details>>
         const detailsPromise = Promise.all(detailPromises);
         // array<details>; await gets rid of (collapses) promises
-        const details = await detailsPromise;
         setLoading(true);
+        const details = await detailsPromise;
         setPokemonDetails([...pokemonDetails, ...details]); //how to append new details?
         setLoading(false);
       }
     })();
   }, [pokemonRefs]);
 
+  //set loading
+
   useEffect(() => {
     (async () => {
       try {
+        setLoading(true);
         const resp = await getPokemonList();
         // pass query to getPokemonList() to update SearchBar
-        setTimeout(function () {
-          setLoading(true);
-          setPokemonRefs({ status: "ready", value: [...resp.results] });
-        }, 1000);
+        setPokemonRefs({ status: "ready", value: [...resp.results] });
         setLoading(false);
       } catch (e) {
         setPokemonRefs({
